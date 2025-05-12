@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,17 +12,17 @@ import (
 )
 
 // Sets the configuration for the renderer
-func getRenderOpts() loadr.RendererOpts {
+func createRenderOpts(liveReload bool) loadr.RendererOpts {
 	return loadr.RendererOpts{
 		FS:          os.DirFS("."),
-		StripPrefix: "pages",
-		LiveReload:  true,
+		StripPrefix: "",
+		LiveReload:  liveReload,
 	}
 }
 
 // This creates a base component with predefined fragments
 // using the html/template
-var baseWithComponents = loadr.NewRenderer(getRenderOpts()).WithComponents("global_components.html")
+var baseWithComponents = loadr.NewRenderer().WithComponents("global_components.html")
 
 // Using the base component, index.html is loaded in
 // We have now created our index component where it will
@@ -57,22 +58,34 @@ func RenderIndexContent(w io.Writer, d IndexData) error {
 }
 
 // Uncomment the line below and see how the program will fail immediately on start
-// var _ = baseWithComponents.LoadPages("I-do-not-exist.html")
+//var _ = baseWithComponents.LoadFiles("I-do-not-exist.html").Template(loadr.NoTemplateName)
+
+// Set livereload based on a flag
+var liveReload = flag.Bool("livereload", false, "use to set livereload to true")
 
 // Bringing it all together below
 func main() {
 	r := http.NewServeMux()
+	flag.Parse()
+	baseWithComponents.SetOptions(createRenderOpts(*liveReload))
 
 	// The rendering is called in here
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		RenderIndex(w, IndexData{"Bob", "SomeContent"})
+		err := RenderIndex(w, IndexData{"Bob", "SomeContent"})
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	})
 
 	r.HandleFunc("/content", func(w http.ResponseWriter, r *http.Request) {
-		RenderIndexContent(w, IndexData{"Bob", "SomeContent"})
+		err := RenderIndexContent(w, IndexData{"Bob", "SomeContent"})
+		if err != nil {
+			fmt.Println(err.Error())
+		}
 	})
 
 	fmt.Println("Listening on 8080, open http://localhost:8080/")
+	fmt.Println("use -livereload flag to turn on dynamic HTML reloading")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		log.Fatalln(err)

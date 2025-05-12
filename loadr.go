@@ -2,7 +2,6 @@ package loadr
 
 import (
 	"errors"
-	"fmt"
 	"html/template"
 	"io"
 	"io/fs"
@@ -15,49 +14,31 @@ type RendererOpts struct {
 	LiveReload  bool   // Enables/disables template reloading on every render
 }
 
-// Renderer with a set of options and components
+// Render templates with a specific set of options
 type Renderer struct {
-	opts       RendererOpts
+	opts       *RendererOpts
 	components []string
+	files      []*TemplateFile
 }
 
-// Represents a loaded file contianing templates
+// Files registered containing templates
 type TemplateFile struct {
-	patterns         []string
-	templates        map[string]*template.Template
-	opts             RendererOpts
-	topLevelTemplate *template.Template
+	patterns  []string
+	templates []*Template
+	opts      *RendererOpts
 }
 
-// Individual template to be rendered
+// Inividual template to be rendered
 type Template struct {
-	template   *template.Template
-	name       string
-	patterns   []string
-	liveReload bool
-	fs         fs.FS
+	template *template.Template
+	name     string
+	patterns []string
+	opts     *RendererOpts
 }
 
-// Helper function to parse new pages
-// Function will panic on error
-func NewRenderer(r RendererOpts) *Renderer {
-	if r.StripPrefix == "" {
-		r.StripPrefix = "."
-	}
-
-	var err error
-	r.FS, err = fs.Sub(r.FS, r.StripPrefix)
-	if err != nil {
-		panic(err)
-	}
-
-	if r.FS == nil {
-		panic("filesystem not set for HTML renderer")
-	}
-
-	return &Renderer{
-		opts: r,
-	}
+// Create a new renderer
+func NewRenderer() *Renderer {
+	return &Renderer{}
 }
 
 // Clones and adds the relevant components
@@ -66,63 +47,80 @@ func (r Renderer) WithComponents(commonComponents ...string) *Renderer {
 	return &r
 }
 
-// Load in a group of files containing templates
-func (r Renderer) LoadFiles(pages ...string) *TemplateFile {
+// Register files containing templates
+func (r *Renderer) LoadFiles(pages ...string) *TemplateFile {
 	var file TemplateFile
 	file.opts = r.opts
 	file.patterns = r.components
 	file.patterns = append(pages, file.patterns...)
-	file.topLevelTemplate = template.Must(template.ParseFS(r.opts.FS, file.patterns...))
-
-	file.templates = make(map[string]*template.Template)
-	for _, subTmpl := range file.topLevelTemplate.Templates() {
-		file.templates[subTmpl.Name()] = subTmpl
-	}
+	r.files = append(r.files, &file)
 	return &file
+}
+
+// Set the options for the renderer. Verifies the registered files and templates by loading, panics on error.
+// Designed to be called in main() or later to set opts programatically
+func (r *Renderer) SetOptions(opts RendererOpts) {
+	if opts.StripPrefix == "" {
+		opts.StripPrefix = "."
+	}
+
+	var err error
+	opts.FS, err = fs.Sub(opts.FS, opts.StripPrefix)
+	if err != nil {
+		panic(err)
+	}
+
+	if opts.FS == nil {
+		panic("filesystem not set for HTML renderer")
+	}
+	r.opts = &opts
+
+	for _, f := range r.files {
+		f.opts = &opts
+		for _, t := range f.templates {
+			t.opts = &opts
+			t.loadTemplate()
+		}
+	}
+
 }
 
 const NoTemplateName string = ""
 
-func (f TemplateFile) Template(name string) *Template {
+// Extract templates from a file.
+// Use NoTemplateName for not defined templates.
+// If the options are set this will load in the template
+func (f *TemplateFile) Template(name string) *Template {
 	var t Template
-	t.fs = f.opts.FS
-	t.liveReload = f.opts.LiveReload
+	t.opts = f.opts
 	t.patterns = f.patterns
 	t.name = name
-	if name == NoTemplateName {
-		t.name = f.topLevelTemplate.Name()
-		t.template = f.topLevelTemplate
-		return &t
+	if t.opts != nil {
+		t.loadTemplate()
 	}
-	var ok bool
-	t.template, ok = f.templates[t.name]
-	if !ok {
-		panic(fmt.Sprintf("template %s not found", name))
-	}
+	f.templates = append(f.templates, &t)
 	return &t
 }
 
-var ErrTemplateNotYetParsed = errors.New("the template has not yet been parsed. Did you run LoadPages or ReloadPages?")
+var ErrTemplateNotYetParsed = errors.New("the template has not yet been parsed. Did you set the renderer options?")
 
-// Clones and reloads the existing template
-func (t Template) ReloadTemplate() *Template {
+// Loads the Template from the files
+func (t *Template) loadTemplate() {
 	name := t.name
-	t.template = template.Must(template.ParseFS(t.fs, t.patterns...))
+	t.template = template.Must(template.ParseFS(t.opts.FS, t.patterns...))
 	if t.name != NoTemplateName {
 		t.template = t.template.Lookup(name)
 	}
-	return &t
 }
 
 // Given the data, and the liveReload flag renders the HTML
 // If the live reload flag is set, the pages will first be reloaded then rendered again
 func (t *Template) Render(wr io.Writer, data any) error {
-	if t.liveReload {
-		t = t.ReloadTemplate()
-	}
-
-	if t.template == nil {
+	if t.template == nil || t.opts == nil {
 		return ErrTemplateNotYetParsed
+	}
+	if t.opts.LiveReload {
+		t.loadTemplate()
 	}
 	return t.template.Execute(wr, data)
 }

@@ -15,12 +15,13 @@ func BenchmarkWithReload(b *testing.B) {
 		LiveReload:  true,
 	}
 
-	r := NewRenderer(ropts).WithComponents("global_components.html").LoadFiles("index.html").Template(NoTemplateName)
-
+	r := NewRenderer().WithComponents("global_components.html")
+	t := r.LoadFiles("index.html").Template(NoTemplateName)
+	r.SetOptions(ropts)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var bs bytes.Buffer
-		r.Render(&bs, nil)
+		t.Render(&bs, nil)
 	}
 }
 
@@ -33,16 +34,18 @@ func BenchmarkNoReload(b *testing.B) {
 		LiveReload:  false,
 	}
 
-	r := NewRenderer(ropts).WithComponents("global_components.html").LoadFiles("index.html").Template(NoTemplateName)
-
+	r := NewRenderer().WithComponents("global_components.html")
+	t := r.LoadFiles("index.html").Template(NoTemplateName)
+	r.SetOptions(ropts)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var bs bytes.Buffer
-		r.Render(&bs, nil)
+		t.Render(&bs, nil)
 	}
 }
 
-func BenchmarkNamedWithReload(b *testing.B) {
+// Same as above but with named templates
+func BenchmarkNamedTemplateReload(b *testing.B) {
 
 	var ropts = RendererOpts{
 		FS:          os.DirFS("./_examples/basic"),
@@ -50,17 +53,17 @@ func BenchmarkNamedWithReload(b *testing.B) {
 		LiveReload:  true,
 	}
 
-	r := NewRenderer(ropts).WithComponents("global_components.html").LoadFiles("index.html").Template("content")
-
+	r := NewRenderer().WithComponents("global_components.html")
+	t := r.LoadFiles("index.html").Template("content")
+	r.SetOptions(ropts)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var bs bytes.Buffer
-		r.Render(&bs, nil)
+		t.Render(&bs, nil)
 	}
 }
 
-// With parsing being cached
-func BenchmarkNamedNoReload(b *testing.B) {
+func BenchmarkNamedTemplateNoReload(b *testing.B) {
 
 	var ropts = RendererOpts{
 		FS:          os.DirFS("./_examples/basic/"),
@@ -68,11 +71,12 @@ func BenchmarkNamedNoReload(b *testing.B) {
 		LiveReload:  false,
 	}
 
-	r := NewRenderer(ropts).WithComponents("global_components.html").LoadFiles("index.html").Template("content")
-
+	r := NewRenderer().WithComponents("global_components.html")
+	t := r.LoadFiles("index.html").Template("content")
+	r.SetOptions(ropts)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var bs bytes.Buffer
-		r.Render(&bs, nil)
+		t.Render(&bs, nil)
 	}
 }

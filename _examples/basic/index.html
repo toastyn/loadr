@@ -10,7 +10,11 @@
     <body>
         {{template "nav"}}
         <h1>Hello {{.Name}}!!</h1>
-        <p>{{.Content}}</p>
+        {{ template "content" . }}
     </body>
 
 </html>
+
+{{ define "content" }}
+<p>{{.Content}}</p>
+{{ end }}

@@ -79,7 +79,7 @@ func (b *BaseTemplates[T]) SetBaseTemplates(patterns ...string) *BaseTemplates[T
 func (b *BaseTemplates[T]) WithTemplates(patterns ...string) *BaseTemplates[T] {
 	c := b.Copy()
 	c.withTemplates = patterns
-	return b
+	return c
 }
 
 // Alias for AddTemplates, it can make the code more readable

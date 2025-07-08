@@ -58,3 +58,14 @@ func LoadTemplates() error {
 
 	return nil
 }
+
+// Should not be used unless you know what you are doing.
+//
+// Resests the store, this is helpful for tests to reset
+// the store if incorrect templates are purposfully provided.
+// WARNING: If Reset() is used directly in application logic
+// this can remove existing templates, allow Load to silently
+// pass and create runtime panics.
+func Reset() {
+	store = registry{loaders: make(map[Loader]struct{})}
+}

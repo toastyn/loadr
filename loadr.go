@@ -25,6 +25,8 @@ func NewBaseTemplate[T any](baseData T) *core.BaseTemplates[T] {
 // Used to set the configuration for the base templates
 type BaseConfig = core.BaseConfig
 
+const NoData = 0
+
 // Lazily prepares the templates for loading by pattern both file names
 // as well as the template names can be provided. If no template name is provided,
 // the template name will be the first name of the SetTemplates() pattern

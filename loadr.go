@@ -55,13 +55,6 @@ func RunLiveReload(handlePattern string, handleReload func(fsnotify.Event, error
 	return livereload.RunLiveReload(handlePattern, handleReload, pathsToWatch...)
 }
 
-// A basic helper function for LiveReload to perform logging if a reload error occurs
-func HandleReloadError(e fsnotify.Event, err error) {
-	if err != nil {
-		log.Println("error:", err.Error())
-	}
-}
-
 // A basic helper function for LiveReload to perform logging when a reload occurs
 func HandleReload(e fsnotify.Event, err error) {
 	if err == nil {

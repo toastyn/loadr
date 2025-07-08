@@ -48,8 +48,9 @@ func newLoadingError[T, U any](t *Templ[T, U], err error) error {
 	return &LoadingError{t.br.baseTemplates, t.br.withTemplates, t.usePattern, err}
 }
 
-var ErrNoConfigProvided = errors.New("no config provided. Cannot load without file system")
-var ErrNoLiveReloadHandler = errors.New("live reload is enabled, but no live reload handler provided, this should be set to avoid errors silently failing")
+var ErrNoConfigProvided = errors.New("no config provided")
+var ErrTemplateParse = errors.New("template parse error")
+var ErrInvalidTemplateData = errors.New("invalid template data")
 
 // Base data used to define the data passed in to the
 // template
@@ -85,7 +86,7 @@ func (t *Templ[T, U]) Load() error {
 	var err error
 	t.t, err = template.ParseFS(t.br.config.FS, patterns...)
 	if err != nil {
-		return newLoadingError(t, err)
+		return newLoadingError(t, fmt.Errorf("%w: %v", ErrTemplateParse, err))
 	}
 
 	// Try to execute the template using the sample data provided
@@ -93,7 +94,7 @@ func (t *Templ[T, U]) Load() error {
 	w := bytes.NewBuffer(bs)
 	err = t.t.ExecuteTemplate(w, t.usePattern, BaseData[T, U]{B: *t.br.baseData, D: t.data})
 	if err != nil {
-		return newLoadingError(t, fmt.Errorf("%w: has a .B or .D prefix been included for the field?", err))
+		return newLoadingError(t, fmt.Errorf("%w has a .B or .D prefix been included for the field?: %v", ErrInvalidTemplateData, err))
 	}
 
 	return nil

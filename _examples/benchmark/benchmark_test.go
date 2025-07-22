@@ -44,7 +44,7 @@ func BenchmarkStdTemplates(b *testing.B) {
 				for i := 0; i < b.N; i++ {
 					var bs bytes.Buffer
 					bs.Reset()
-					t.ExecuteTemplate(&bs, "index.html", sample)
+					t.ExecuteTemplate(&bs, "index.html", struct{ D testData }{data})
 				}
 			})
 	}

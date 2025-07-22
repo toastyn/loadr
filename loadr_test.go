@@ -54,10 +54,11 @@ func TestCase1PartialsFromWithTemplates(t *testing.T) {
 		caseFS = os.DirFS(case1Dir)
 	)
 
-	b := NewBaseTemplate(case1BaseData{})
-	b.SetConfig(BaseConfig{FS: caseFS})
-
-	b.SetBaseTemplates("input.html")
+	b := NewTemplateContext(
+		BaseConfig{FS: caseFS},
+		case1BaseData{},
+		"input.html",
+	)
 
 	p1 := b.WithTemplates("input.partial1.html")
 	p2 := b.WithTemplates("input.partial2.html")
@@ -156,12 +157,13 @@ func TestBaseCopy(t *testing.T) {
 		caseFS = os.DirFS(case1Dir)
 	)
 
-	b := NewBaseTemplate(case1BaseData{})
-	b.SetConfig(BaseConfig{FS: caseFS})
+	b := NewTemplateContext(
+		BaseConfig{FS: caseFS},
+		case1BaseData{},
+		"input.partial1.html",
+	)
 
 	defer registry.Reset()
-
-	b.SetBaseTemplates("input.partial1.html")
 
 	cp := b.Copy()
 	cp.SetBaseTemplates("input.partial2.html")
@@ -194,8 +196,7 @@ func TestBaseDataImmediatePropagation(t *testing.T) {
 	}
 
 	defer registry.Reset()
-	b := NewBaseTemplate(caseData{1})
-	b.SetConfig(BaseConfig{FS: caseFS}).SetBaseTemplates("input.emptydata.html")
+	b := NewTemplateContext(BaseConfig{FS: caseFS}, caseData{1}, "input.emptydata.html")
 	templ := NewTemplate(b, "input.emptydata.html", NoData)
 
 	err := LoadTemplates()

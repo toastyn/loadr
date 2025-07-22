@@ -30,7 +30,9 @@ type baseData struct {
 // expected base data type
 // Base data is the data which will be made available in *all* templates
 // derived from this base template
-var base = loadr.NewBaseTemplate(baseData{}).SetConfig(config).SetBaseTemplates(
+var base = loadr.NewTemplateContext(
+	config,
+	baseData{},
 	"index.html",
 	"global_components.html")
 

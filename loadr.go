@@ -14,12 +14,12 @@ import (
 
 // Creates a new base template with the provided baseData.
 //
-// All NewTemplate calls will use BaseTemplates as their starting point.
+// All NewTemplateContext calls will use TemplateContext as their starting point.
 //
 // The baseData is used to define the data type passed in to the
 // template for the base data for all child templates.
-func NewBaseTemplate[T any](baseData T) *core.BaseTemplates[T] {
-	return core.NewBaseTemplate(baseData)
+func NewTemplateContext[T any](config BaseConfig, baseData T, basePatterns ...string) *core.TemplateContext[T] {
+	return core.NewTemplateContext(config, baseData, basePatterns...)
 }
 
 // Used to set the configuration for the base templates
@@ -35,8 +35,8 @@ const NoData = 0
 // for the loading and validation when loadr.LoadTemplates() is called.
 //
 // No templates get parsed until loadr.Validate() is run
-func NewTemplate[T, U any](br *core.BaseTemplates[T], pattern string, data U) *core.Templ[T, U] {
-	return core.NewTemplate(br, pattern, data)
+func NewTemplate[T, U any](tc *core.TemplateContext[T], pattern string, data U) *core.Templ[T, U] {
+	return core.NewTemplate(tc, pattern, data)
 }
 
 // Loads and validates all the created templates.

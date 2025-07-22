@@ -12,8 +12,8 @@ import (
 	"github.com/nesbyte/loadr/registry"
 )
 
-func NewTemplate[T, U any](br *BaseTemplates[T], pattern string, data U) *Templ[T, U] {
-	t := Templ[T, U]{br: br, data: data, usePattern: pattern}
+func NewTemplate[T, U any](tc *TemplateContext[T], pattern string, data U) *Templ[T, U] {
+	t := Templ[T, U]{tc: tc, data: data, usePattern: pattern}
 
 	registry.Add(&t)
 
@@ -22,7 +22,7 @@ func NewTemplate[T, U any](br *BaseTemplates[T], pattern string, data U) *Templ[
 
 type Templ[T, U any] struct {
 	t          *template.Template
-	br         *BaseTemplates[T]
+	tc         *TemplateContext[T]
 	data       U
 	usePattern string
 }
@@ -45,7 +45,7 @@ func (e *LoadingError) Unwrap() error {
 }
 
 func newLoadingError[T, U any](t *Templ[T, U], err error) error {
-	return &LoadingError{t.br.baseTemplates, t.br.withTemplates, t.usePattern, err}
+	return &LoadingError{t.tc.baseTemplates, t.tc.withTemplates, t.usePattern, err}
 }
 
 var ErrNoConfigProvided = errors.New("no config provided")
@@ -63,20 +63,20 @@ type BaseData[T any, U any] struct {
 // This should rarely be called directly
 func (t *Templ[T, U]) Load() error {
 	// Immeditately run on load
-	if t.br.onLoad != nil {
-		err := t.br.onLoad()
+	if t.tc.onLoad != nil {
+		err := t.tc.onLoad()
 		if err != nil {
 			return err
 		}
 	}
 
-	if t.br.config == nil {
+	if t.tc.config == nil {
 		return ErrNoConfigProvided
 	}
 
 	patterns := []string{}
-	patterns = append(patterns, t.br.baseTemplates...)
-	patterns = append(patterns, t.br.withTemplates...)
+	patterns = append(patterns, t.tc.baseTemplates...)
+	patterns = append(patterns, t.tc.withTemplates...)
 
 	if len(patterns) == 0 {
 		return newLoadingError(t, ErrNoBaseOrPatternFound)
@@ -84,7 +84,7 @@ func (t *Templ[T, U]) Load() error {
 
 	// Parse and cache the template
 	var err error
-	t.t, err = template.ParseFS(t.br.config.FS, patterns...)
+	t.t, err = template.ParseFS(t.tc.config.FS, patterns...)
 	if err != nil {
 		return newLoadingError(t, fmt.Errorf("%w: %v", ErrTemplateParse, err))
 	}
@@ -92,7 +92,7 @@ func (t *Templ[T, U]) Load() error {
 	// Try to execute the template using the sample data provided
 	bs := []byte{}
 	w := bytes.NewBuffer(bs)
-	err = t.t.ExecuteTemplate(w, t.usePattern, BaseData[T, U]{B: *t.br.baseData, D: t.data})
+	err = t.t.ExecuteTemplate(w, t.usePattern, BaseData[T, U]{B: *t.tc.baseData, D: t.data})
 	if err != nil {
 		return newLoadingError(t, fmt.Errorf("%w has a .B or .D prefix been included for the field?: %v", ErrInvalidTemplateData, err))
 	}
@@ -114,13 +114,13 @@ func (t *Templ[T, U]) Load() error {
 //
 // If live reloading is enabled, JS is injected at the end of the body.
 func (t *Templ[T, U]) Render(w io.Writer, data U) {
-	d := BaseData[T, U]{B: *t.br.baseData, D: data}
+	d := BaseData[T, U]{B: *t.tc.baseData, D: data}
 
 	// In production rendering is short and simple
 	if !registry.LiveReload() {
 		err := t.t.ExecuteTemplate(w, t.usePattern, d)
 		if err != nil {
-			panic(&LoadingError{t.br.baseTemplates, t.br.withTemplates, t.usePattern, fmt.Errorf("execute template error in render %s", err)})
+			panic(&LoadingError{t.tc.baseTemplates, t.tc.withTemplates, t.usePattern, fmt.Errorf("execute template error in render %s", err)})
 		}
 		return
 	}
@@ -139,7 +139,7 @@ func (t *Templ[T, U]) Render(w io.Writer, data U) {
 
 	err = t.t.ExecuteTemplate(&buf, t.usePattern, d)
 	if err != nil {
-		panic(&LoadingError{t.br.baseTemplates, t.br.withTemplates, t.usePattern, fmt.Errorf("execute template error in render %s", err)})
+		panic(&LoadingError{t.tc.baseTemplates, t.tc.withTemplates, t.usePattern, fmt.Errorf("execute template error in render %s", err)})
 	}
 
 	html := buf.String()

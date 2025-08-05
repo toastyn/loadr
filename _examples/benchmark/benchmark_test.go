@@ -44,7 +44,10 @@ func BenchmarkStdTemplates(b *testing.B) {
 				for i := 0; i < b.N; i++ {
 					var bs bytes.Buffer
 					bs.Reset()
-					t.ExecuteTemplate(&bs, "index.html", struct{ D testData }{data})
+					err := t.ExecuteTemplate(&bs, "index.html", struct{ D testData }{data})
+					if err != nil {
+						b.Fatal(err)
+					}
 				}
 			})
 	}
@@ -76,7 +79,7 @@ func BenchmarkLoadrInProductionMode(b *testing.B) {
 }
 
 // Using html/templates with the templates re-parsed on every iteration
-func BenchmarkStdTemplatesWithParsing(b *testing.B) {
+func BenchmarkStdTemplatesWithLiveReload(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

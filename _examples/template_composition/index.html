@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index page</title>
+    <link rel="stylesheet" href="{{.B.Styles}}">
+    <script type="module" src="{{.B.JSDist}}"></script>
+</head>
+
+<body>
+    {{template "nav"}}
+    <h1>Select one of the compositions below!</h1>
+    {{ block "body" . }}
+    <a href="/composition1">Click here to render using composition1</a>
+    <br>
+    <br>
+    <a href="/composition2">Click here to render using composition2</a>
+    {{end}}
+</body>
+
+</html>

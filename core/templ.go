@@ -84,7 +84,7 @@ func (t *Templ[T, U]) Load() error {
 
 	// Parse and cache the template
 	var err error
-	t.t, err = template.ParseFS(t.tc.config.FS, patterns...)
+	t.t, err = template.New("").Funcs(t.tc.funcMap).ParseFS(t.tc.config.FS, patterns...)
 	if err != nil {
 		return newLoadingError(t, fmt.Errorf("%w: %v", ErrTemplateParse, err))
 	}

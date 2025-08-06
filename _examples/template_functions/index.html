@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Index page</title>
+    <link rel="stylesheet" href="{{.B.Styles}}">
+    <script type="module" src="{{.B.JSDist}}"></script>
+</head>
+
+<body>
+    {{template "nav"}}
+    <h1>Hello {{.D.Name}}!!</h1>
+    {{ template "content" . }}
+    <p>Click <a href="./content">here</a> to render only the content template</p>
+</body>
+
+</html>
+
+{{ define "content" }}
+<p>{{customFunc .D.Content}}</p>
+{{ end }}

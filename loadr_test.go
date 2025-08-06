@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"os"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 
 const case1Dir = "./testdata/case1"
 const case2Dir = "./testdata/case2"
+const case3Dir = "./testdata/case3"
 
 type case1BaseData struct {
 	Title string
@@ -231,4 +233,39 @@ func TestLiveReloadCallTwice(t *testing.T) {
 		defer cancel()
 	}
 
+}
+
+// Validates that the FuncMap functionality works as expected
+func TestFuncMapFunctionality(t *testing.T) {
+	var (
+		caseFS = os.DirFS(case3Dir)
+	)
+
+	funcMap := template.FuncMap{
+		"toUpper": strings.ToUpper,
+	}
+
+	type upperData struct {
+		Name string
+	}
+
+	base := NewTemplateContext(
+		BaseConfig{FS: caseFS},
+		NoData,
+		"input.html",
+	).Funcs(funcMap)
+
+	index := NewTemplate(base, "input.html", upperData{"test"})
+
+	err := LoadTemplates()
+	if err != nil {
+		t.Fatalf("loadtemplates failed: %s", err)
+	}
+
+	b := bytes.NewBufferString("")
+	index.Render(b, upperData{"test"})
+
+	if b.String() != "TEST" {
+		t.Errorf("want: TEST\ngot: %s\n", b.String())
+	}
 }

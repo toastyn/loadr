@@ -1,6 +1,7 @@
 package core
 
 import (
+	"html/template"
 	"io/fs"
 )
 
@@ -19,7 +20,8 @@ type TemplateContext[T any] struct {
 	baseData      *T
 	baseTemplates []string // The base templates that are used and settable
 	withTemplates []string
-	onLoad        func() error // If set, called before the templates are loaded
+	onLoad        func() error     // If set, called before the templates are loaded
+	funcMap       template.FuncMap // Functions that will be added to the templates
 }
 
 // Performs a shallow copy equivalent of TemplateContext
@@ -37,6 +39,7 @@ func (tc *TemplateContext[T]) Copy(patterns ...string) *TemplateContext[T] {
 		baseData:      tc.baseData,
 		baseTemplates: bt,
 		withTemplates: at,
+		funcMap:       tc.funcMap,
 	}
 
 	return &newTemplateContext
@@ -104,4 +107,11 @@ func (tc *TemplateContext[T]) SetOnTemplateLoad(onLoad func() error) {
 	// Currently inefficient as it is run every time on load
 	// if there are many templates it runs multiple times
 	tc.onLoad = onLoad
+}
+
+// Adds the FuncMap functions to the template context using the
+// std template.FuncMap type
+func (tc *TemplateContext[T]) Funcs(funcMap template.FuncMap) *TemplateContext[T] {
+	tc.funcMap = funcMap
+	return tc
 }

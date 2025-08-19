@@ -167,6 +167,8 @@ func walkDirsAndAddPaths(watcher *fsnotify.Watcher, pathsToWatch []string) error
 
 }
 
+const goType = ".go"
+
 // The runWatcher function listens for file system events, debounces
 // them to avoid multiple notifications for the same file change, and
 // broadcasts changes to all connected clients
@@ -184,6 +186,12 @@ func runWatcher(ctx context.Context, watcher *fsnotify.Watcher, handleChange fun
 		case event, ok := <-watcher.Events:
 			if !ok {
 				return
+			}
+
+			// ignore Go files, as they are not relevant for live reloading
+			eventNameLength := len(event.Name)
+			if (eventNameLength > 0) && (event.Name[eventNameLength-len(goType):eventNameLength] == goType) {
+				continue
 			}
 
 			// If the event was to create a folder, we need to add it to the watcher

@@ -7,7 +7,6 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/nesbyte/loadr/core"
-	"github.com/nesbyte/loadr/handlers"
 	"github.com/nesbyte/loadr/livereload"
 	"github.com/nesbyte/loadr/registry"
 )
@@ -64,13 +63,4 @@ func HandleReload(e fsnotify.Event, err error) {
 	} else {
 		log.Println("error:", err.Error())
 	}
-}
-
-// Shorthand to make it easier to create middleware to set headers
-// and does not depend on loadr.LoadTemplates()
-//
-// Use Set(key, value), to append key values to the header ResponseWriter
-// followed by Middleware() to return a handler middleware
-func NewHeaders() handlers.HeaderSetter {
-	return handlers.NewHeaders()
 }
